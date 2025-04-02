@@ -50,3 +50,26 @@ The tradeoff is increased computational cost per step, but this is often offset 
 3. Early Stopping: Training automatically stops when validation loss stops improving, preventing overfitting. The best weights are restored.
 
 The final model is trained on the full dataset after validation confirms the architecture's effectiveness.
+
+
+## Results
+
+The model achieves strong performance:
+
+- Overall Accuracy: 90%
+- Normal Traffic (Class 0):
+  - Precision: 88%
+  - Recall: 94%
+  - F1-Score: 91%
+- Attack Traffic (Class 1):
+  - Precision: 92%
+  - Recall: 85%
+  - F1-Score: 89%
+
+The confusion matrix showed:
+- True Negatives (Normal correctly identified): 155,706
+- False Positives (Normal misclassified as Attack): 9,939
+- False Negatives (Attack misclassified as Normal): 20,875
+- True Positives (Attack correctly identified): 119,889
+
+These results indicate the model is well-balanced between classes, with slightly better performance at identifying normal traffic (94% recall) than attacks (85% recall). The high precision for attack detection (92%) means we have relatively few false alarms.
