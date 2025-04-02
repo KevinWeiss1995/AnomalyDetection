@@ -31,3 +31,15 @@ The model is a neural network that consists of 13 layers:
 The architecture includes a residual block (layers 6-10) that helps with gradient flow during training.
 
 ## Training
+
+The model is trained utilizing several techniques:
+
+1. 5-Fold Cross Validation: The dataset is split into 5 parts, where we train on 4 parts and validate on the remaining part, rotating through all combinations. This gives us a robust estimate of model performance and helps detect overfitting.
+
+2. Cyclic Learning Rate (CLR): Instead of using a fixed learning rate, we cycle between 0.0001 and 0.001, which helps escape local minima and often leads to better convergence. The learning rate oscillates over a fixed step size of 2000 batches.
+
+3. KFAC (K-FAC) Optimizer: We use K-FAC (Kronecker-Factored Approximate Curvature) for natural gradient descent, which helps the model converge faster and more reliably than traditional optimizers by approximating the Fisher Information Matrix.
+
+4. Early Stopping: Training automatically stops when validation loss stops improving, preventing overfitting. The best weights are restored.
+
+The final model is trained on the full dataset after validation confirms the architecture's effectiveness.
