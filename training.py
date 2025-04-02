@@ -72,7 +72,8 @@ def train_with_cross_validation(X, y, n_splits=5):
                 patience=10,
                 restore_best_weights=True
             ),
-            KFACCallback(damping=0.001, momentum=0.9)
+            KFACCallback(damping=0.001, momentum=0.9),
+            CyclicLR(base_lr=0.0001, max_lr=0.001, step_size=2000)
         ]
         
         history = model.fit(

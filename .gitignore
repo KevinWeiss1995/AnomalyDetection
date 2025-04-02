@@ -35,4 +35,7 @@ ENV/
 *.pkl
 
 # Data
-data/network/*.csv 
+data/*.csv
+
+# Results
+results/ 
