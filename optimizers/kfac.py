@@ -12,26 +12,23 @@ def kfac_update(model, grads, accumulated_grads, fisher_matrices, momentum, damp
         if isinstance(layer, tf.Variable):
             layer_name = layer.name
             
-            # Update accumulated gradients
+           
             accumulated_grads[layer_name] = (
                 momentum * accumulated_grads[layer_name] + 
                 (1 - momentum) * grad
             )
             
-            # Update Fisher matrix
             fisher_update = tf.matmul(tf.expand_dims(grad, 1), tf.expand_dims(grad, 0))
             fisher_matrices[layer_name] = (
                 fisher_matrices[layer_name] + 
                 damping * fisher_update
             )
             
-            # Compute natural gradient with better numerical stability
             damping_eye = damping * tf.eye(tf.shape(fisher_update)[0], dtype=grad.dtype)
             fisher_damped = fisher_matrices[layer_name] + damping_eye
             fisher_inv = tf.linalg.inv(fisher_damped)
             nat_grad = tf.matmul(fisher_inv, tf.reshape(accumulated_grads[layer_name], (-1, 1)))
             
-            # Apply update
             layer.assign_sub(learning_rate * tf.reshape(nat_grad, grad.shape))
     
     return accumulated_grads, fisher_matrices
@@ -63,8 +60,7 @@ class KFACCallback(keras.callbacks.Callback):
         """Apply KFAC updates after gradient step"""
         if not hasattr(self.model, 'optimizer'):
             return
-            
-        # Get current batch data from logs
+      
         x_batch = logs.get('x')
         y_batch = logs.get('y')
         
@@ -76,8 +72,7 @@ class KFACCallback(keras.callbacks.Callback):
             loss = self.model.compiled_loss(y_batch, predictions)
         
         grads = tape.gradient(loss, self.model.trainable_variables)
-        
-        # Apply KFAC update
+
         self.accumulated_grads, self.fisher_matrices = kfac_update(
             self.model,
             grads,
