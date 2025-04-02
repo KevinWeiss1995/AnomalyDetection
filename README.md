@@ -28,7 +28,7 @@ The model is a neural network that consists of 13 layers:
 - 1 Add layer (for residual connection)
 - 1 Input layer
 
-The architecture includes a residual block (layers 6-10) that helps with gradient flow during training.
+The architecture includes a residual block (layers 6-10). Residual connections were originally used to help with gradient flow during training, but our KFAC optimizer handles this well. We still implement them because they create ensemble-like behavior where the network can choose to use or bypass certain layers and provide additional paths for information flow, regardless of optimizer.
 
 ## Training
 
