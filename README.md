@@ -36,6 +36,8 @@ The architecture includes a residual block (layers 6-10). Residual connections w
 KFAC is an optimization technique that approximates natural gradient descent. While traditional optimizers like Adam or SGD only use first-order information (gradients), KFAC uses second-order information (curvature) to make better update steps:
 
 - Traditional optimizers might zigzag in steep valleys of the loss landscape
+- KFAC is a form of natural gradient descent, which takes advantage of the probabilistic nature of neural network parameters
+- The parameters are treated as a probability distribution over the parameter space
 - KFAC approximates the Fisher Information Matrix using Kronecker products
 - This gives better estimates of the optimal step direction
 - Result: Faster convergence and better training stability
