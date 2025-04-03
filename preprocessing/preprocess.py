@@ -23,8 +23,7 @@ address class imbalances.
 
 """
 
-
-# Ignore specific warnings
+# Ignore those silly future warnings
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=pd.errors.DtypeWarning)
 
