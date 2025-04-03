@@ -73,3 +73,27 @@ The confusion matrix showed:
 - True Positives (Attack correctly identified): 119,889
 
 These results indicate the model is well-balanced between classes, with slightly better performance at identifying normal traffic (94% recall) than attacks (85% recall). The high precision for attack detection (92%) means we have relatively few false alarms.
+
+## Testing
+
+The repo includes a script for testing the model on a sample of data. You can generate a sample of data by running traffic_generator.py and traffic_modifier.py simultaneously. Below is an example of the output of use_model.py:
+
+```
+Analyzing Normal Traffic Sample:
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 52ms/step
+Probability of malicious traffic: 34.81%
+Classification: Benign
+
+Analyzing Attack Traffic Sample:
+1/1 ━━━━━━━━━━━━━━━━━━━━ 0s 17ms/step
+Probability of malicious traffic: 82.57%
+Classification: Malicious
+
+Suspicious Indicators in Attack Traffic:
+- High Flow Rate: 0.32
+- High Packet Length Variance: 0.83
+- High Forward Data Packets: 0.92
+
+Potentially suspicious values in normal traffic:
+- High Flow IAT Min: 0.97
+```
