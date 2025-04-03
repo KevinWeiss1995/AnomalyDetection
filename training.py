@@ -56,7 +56,7 @@ def train_with_cross_validation(X, y, n_splits=5):
         
         model = create_model(X.shape[1])
         print("\nModel Architecture:")
-        model.summary()
+        model.summary() 
         
         model.compile(
             optimizer=keras.optimizers.Adam(learning_rate=0.001),
