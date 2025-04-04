@@ -1,118 +1,108 @@
-import os
 import sys
-import tensorflow as tf
-import numpy as np
+import os
+import pandas as pd
+import json
 
-# Add project root to Python path
-project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), "../.."))
+# Add the project root to sys.path
+project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 sys.path.append(project_root)
 
-from utils.git import get_git_repo_root
+import tensorflow as tf
+import numpy as np
+from tensorflow import keras
+from sklearn.metrics import classification_report, confusion_matrix
+import matplotlib.pyplot as plt
+from utils.git import get_git_repo_root  # Import the function
 
-# Get project root and load model
-base_repo = get_git_repo_root()
-model_path = os.path.join(base_repo, 'results', 'models', 'network', 'model.keras')
+# Get project root using the utility function
+project_root = get_git_repo_root()
+
+# Construct the model path
+model_path = os.path.join(project_root, 'results', 'models', 'network', 'model.keras')
 print(f"Looking for model at: {model_path}")  # Debug print
+model = keras.models.load_model(model_path)
 
-model = tf.keras.models.load_model(model_path)
-
-# Sample 1: Normal Traffic (based on benign patterns in test data)
+# Sample 1: Normal Traffic (revised to be more realistic)
 normal_traffic = {
-    "Fwd Packet Length Max": 0.48,  # Most benign samples have lower values
-    "Fwd Packet Length Min": 0.0,
+    "Fwd Packet Length Max": 1280.0,
+    "Fwd Packet Length Min": 40.0,
+    "Bwd Packet Length Min": 40.0,
+    "Flow Bytes/s": 800.0,
+    "Flow IAT Mean": 0.05,
+    "Flow IAT Min": 0.001,
+    "Fwd IAT Total": 10.0,
+    "Fwd IAT Mean": 0.05,
+    "Fwd IAT Min": 0.001,
+    "Bwd IAT Total": 10.0,
+    "Bwd IAT Mean": 0.05,
+    "Bwd IAT Std": 0.01,
+    "Bwd IAT Max": 0.1,
+    "Bwd IAT Min": 0.001,
+    "Fwd PSH Flags": 1,
+    "Bwd Header Length": 320,
+    "Fwd Packets/s": 20.0,
+    "Bwd Packets/s": 15.0,
+    "Min Packet Length": 40,
+    "Max Packet Length": 1280,
+    "Packet Length Mean": 500.0,
+    "Packet Length Std": 300.0,
+    "Packet Length Variance": 90000.0,
+    "FIN Flag Count": 1,
+    "SYN Flag Count": 1,
+    "RST Flag Count": 0,
+    "PSH Flag Count": 1,
+    "ACK Flag Count": 10,
+    "URG Flag Count": 0,
+    "CWE Flag Count": 0,
+    "ECE Flag Count": 0,
+    "Down/Up Ratio": 0.75,
+    "Average Packet Size": 500.0,
+    "Avg Fwd Segment Size": 600.0,
+    "Avg Bwd Segment Size": 400.0,
+    "Fwd Header Length": 320
+}
+
+# Sample 2: Attack Traffic (high SYN count indicating potential SYN flood)
+attack_traffic = {
+    "Fwd Packet Length Max": 50.0,
+    "Fwd Packet Length Min": 44.0,
     "Bwd Packet Length Min": 0.0,
-    "Flow Bytes/s": 0.3,
-    "Flow IAT Mean": 0.65,
-    "Flow IAT Min": 0.97,
-    "Fwd IAT Total": 0.0,
-    "Fwd IAT Mean": 0.0,
-    "Fwd IAT Min": 0.0,
+    "Flow Bytes/s": 12022.688875459973,
+    "Flow IAT Mean": 0.0039095304696718835,
+    "Flow IAT Min": 7.867813110351562e-06,
+    "Fwd IAT Total": 59.88227820396423,
+    "Fwd IAT Mean": 0.0039095304696718835,
+    "Fwd IAT Min": 7.867813110351562e-06,
     "Bwd IAT Total": 0.0,
     "Bwd IAT Mean": 0.0,
     "Bwd IAT Std": 0.0,
     "Bwd IAT Max": 0.0,
     "Bwd IAT Min": 0.0,
-    "Fwd PSH Flags": 0.0,
-    "Bwd Header Length": 0.43,
-    "Fwd Packets/s": 0.35,
-    "Bwd Packets/s": 0.48,
-    "Min Packet Length": 0.0,
-    "Packet Length Std": 0.0,
-    "Packet Length Variance": 0.0,
-    "FIN Flag Count": 0.0,
-    "PSH Flag Count": 0.0,
-    "ACK Flag Count": 1.0,
-    "URG Flag Count": 1.0,
-    "Down/Up Ratio": 0.68,
-    "Avg Fwd Segment Size": 0.0,
-    "Subflow Fwd Bytes": 0.0,
-    "Subflow Bwd Bytes": 0.0,
-    "Init_Win_bytes_forward": 0.56,
-    "Init_Win_bytes_backward": 0.87,
-    "act_data_pkt_fwd": 0.0,
-    "Active Mean": 0.0,
-    "Active Max": 0.0,
-    "Active Min": 0.0,
-    "Idle Max": 0.0
-}
-
-'''
-# Print feature order for debugging
-print("\nFeature order used:")
-for i, (feature, value) in enumerate(normal_traffic.items()):
-    print(f"{i}: {feature} = {value}")
-
-# Load and print training features (if available)
-try:
-    import pandas as pd
-    train_data = pd.read_csv(os.path.join(base_repo, 'data/network/train_data.csv'))
-    print("\nTraining features:")
-    print(train_data.columns.tolist())
-except:
-    pass
-'''
-
-# Sample 2: Attack Traffic (based on malicious patterns in test data)
-attack_traffic = {
-    "Fwd Packet Length Max": 0.87,
-    "Fwd Packet Length Min": 0.0,
-    "Bwd Packet Length Min": 0.0,
-    "Flow Bytes/s": 0.32,
-    "Flow IAT Mean": 0.84,
-    "Flow IAT Min": 0.11,
-    "Fwd IAT Total": 0.95,
-    "Fwd IAT Mean": 0.83,
-    "Fwd IAT Min": 0.38,
-    "Bwd IAT Total": 0.85,
-    "Bwd IAT Mean": 0.85,
-    "Bwd IAT Std": 0.86,
-    "Bwd IAT Max": 0.85,
-    "Bwd IAT Min": 0.72,
-    "Fwd PSH Flags": 0.0,
-    "Bwd Header Length": 0.83,
-    "Fwd Packets/s": 0.16,
-    "Bwd Packets/s": 0.21,
-    "Min Packet Length": 0.0,
-    "Packet Length Std": 0.83,
-    "Packet Length Variance": 0.83,
-    "FIN Flag Count": 0.0,
-    "PSH Flag Count": 0.0,
-    "ACK Flag Count": 1.0,
-    "URG Flag Count": 0.0,
+    "Fwd PSH Flags": 0,
+    "Bwd Header Length": 0,
+    "Fwd Packets/s": 255.80189096723348,
+    "Bwd Packets/s": 0.0,
+    "Min Packet Length": 44,
+    "Max Packet Length": 50,
+    "Packet Length Mean": 47.0,
+    "Packet Length Std": 3.0,
+    "Packet Length Variance": 9.0,
+    "FIN Flag Count": 0,
+    "SYN Flag Count": 7659,
+    "RST Flag Count": 7659,
+    "PSH Flag Count": 0,
+    "ACK Flag Count": 7659,
+    "URG Flag Count": 0,
+    "CWE Flag Count": 0,
+    "ECE Flag Count": 0,
     "Down/Up Ratio": 0.0,
-    "Avg Fwd Segment Size": 0.97,
-    "Subflow Fwd Bytes": 0.96,
-    "Subflow Bwd Bytes": 0.86,
-    "Init_Win_bytes_forward": 0.39,
-    "Init_Win_bytes_backward": 0.77,
-    "act_data_pkt_fwd": 0.92,
-    "Active Mean": 0.83,
-    "Active Max": 0.83,
-    "Active Min": 0.83,
-    "Idle Max": 0.96
+    "Average Packet Size": 47.0,
+    "Avg Fwd Segment Size": 47.0,
+    "Avg Bwd Segment Size": 0.0,
+    "Fwd Header Length": 61272
 }
 
-# Convert samples to numpy arrays
+# Convert both samples to numpy arrays
 normal_array = np.array([list(normal_traffic.values())])
 attack_array = np.array([list(attack_traffic.values())])
 
@@ -129,24 +119,58 @@ print(f"Classification: {'Malicious' if attack_prob > 0.5 else 'Benign'}")
 
 # Print suspicious indicators for attack traffic
 print("\nSuspicious Indicators in Attack Traffic:")
-if attack_traffic["Flow Bytes/s"] > 0.3:
-    print(f"- High Flow Rate: {attack_traffic['Flow Bytes/s']:.2f}")
-if attack_traffic["Flow IAT Min"] < 0.1:
+if attack_traffic["SYN Flag Count"] > 100:
+    print(f"- High SYN Count: {attack_traffic['SYN Flag Count']} (Possible SYN Flood)")
+if attack_traffic["RST Flag Count"] > 100:
+    print(f"- High RST Count: {attack_traffic['RST Flag Count']} (Possible RST Flood)")
+if attack_traffic["Flow Bytes/s"] > 10000:
+    print(f"- High Flow Rate: {attack_traffic['Flow Bytes/s']:.2f} bytes/s")
+if attack_traffic["Flow IAT Min"] < 0.0001:
     print(f"- Very small Inter-Arrival Time: {attack_traffic['Flow IAT Min']}")
-if attack_traffic["Packet Length Variance"] > 0.8:
-    print(f"- High Packet Length Variance: {attack_traffic['Packet Length Variance']}")
-if attack_traffic["act_data_pkt_fwd"] > 0.9:
-    print(f"- High Forward Data Packets: {attack_traffic['act_data_pkt_fwd']}")
 
-# Suspicious values in normal traffic:
-print("\nPotentially suspicious values in normal traffic:")
-suspicious_thresholds = {
-    "Flow Bytes/s": 1000,
-    "SYN Flag Count": 2,
-    "RST Flag Count": 2,
-    "Flow IAT Min": 0.0001
-}
+# Load test data and labels
+data_path = os.path.join(project_root, 'data', 'network')
+X_test = pd.read_csv(os.path.join(data_path, 'test_data.csv'))
+y_test = pd.read_csv(os.path.join(data_path, 'test_labels.csv'))
 
-for feat, threshold in suspicious_thresholds.items():
-    if feat in normal_traffic and normal_traffic[feat] > threshold:
-        print(f"- High {feat}: {normal_traffic[feat]}") 
+# Convert to numpy arrays if necessary
+X_test = X_test.to_numpy()
+y_test = y_test.to_numpy()
+
+# Evaluate the model
+test_loss, test_accuracy, test_auc = model.evaluate(X_test, y_test, verbose=1)
+
+print(f"Test Loss: {test_loss}")
+print(f"Test Accuracy: {test_accuracy}")
+print(f"Test AUC: {test_auc}")
+
+# Get predictions
+predictions = (model.predict(X_test) > 0.5).astype(int)
+
+# Print confusion matrix
+print("\nConfusion Matrix:")
+print(confusion_matrix(y_test, predictions))
+
+# Print classification report
+print("\nClassification Report:")
+print(classification_report(y_test, predictions))
+
+# Load the training history
+with open('final_history.json', 'r') as f:
+    history = json.load(f)
+
+# Plot accuracy
+plt.plot(history['accuracy'], label='train_accuracy')
+plt.plot(history['val_accuracy'], label='val_accuracy')
+plt.xlabel('Epoch')
+plt.ylabel('Accuracy')
+plt.legend()
+plt.show()
+
+# Plot loss
+plt.plot(history['loss'], label='train_loss')
+plt.plot(history['val_loss'], label='val_loss')
+plt.xlabel('Epoch')
+plt.ylabel('Loss')
+plt.legend()
+plt.show() 

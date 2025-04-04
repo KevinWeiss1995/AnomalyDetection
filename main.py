@@ -16,7 +16,6 @@ def main():
     print("\nTraining final model...")
     final_model = train_final_model(X, y, X_test, y_test)
 
-    # Save as .keras file - simple!
     model_dir = os.path.join(get_git_repo_root(), 'results', 'models', 'network')
     os.makedirs(model_dir, exist_ok=True)
     model_path = os.path.join(model_dir, 'model.keras')
@@ -24,7 +23,6 @@ def main():
     final_model.save(model_path)
     print(f"\nModel saved to: {model_path}")
 
-    # Quick verification
     loaded_model = tf.keras.models.load_model(model_path)
     test_predictions = (loaded_model.predict(X_test) > 0.5).astype(int)
     print("\nVerification of saved model:")
