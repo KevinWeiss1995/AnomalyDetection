@@ -3,7 +3,7 @@ import os
 import pandas as pd
 import json
 
-# Add the project root to sys.path
+
 project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '../../'))
 sys.path.append(project_root)
 
@@ -12,17 +12,15 @@ import numpy as np
 from tensorflow import keras
 from sklearn.metrics import classification_report, confusion_matrix
 import matplotlib.pyplot as plt
-from utils.git import get_git_repo_root  # Import the function
+from utils.git import get_git_repo_root 
+from explanations.llm_explainer import NetworkExplainer
 
-# Get project root using the utility function
 project_root = get_git_repo_root()
 
-# Construct the model path
 model_path = os.path.join(project_root, 'results', 'models', 'network', 'model.keras')
 print(f"Looking for model at: {model_path}")  # Debug print
 model = keras.models.load_model(model_path)
 
-# Sample 1: Normal Traffic (revised to be more realistic)
 normal_traffic = {
     "Fwd Packet Length Max": 1280.0,
     "Fwd Packet Length Min": 40.0,
@@ -62,7 +60,6 @@ normal_traffic = {
     "Fwd Header Length": 320
 }
 
-# Sample 2: Attack Traffic (high SYN count indicating potential SYN flood)
 attack_traffic = {
     "Fwd Packet Length Max": 50.0,
     "Fwd Packet Length Min": 44.0,
@@ -102,11 +99,9 @@ attack_traffic = {
     "Fwd Header Length": 61272
 }
 
-# Convert both samples to numpy arrays
 normal_array = np.array([list(normal_traffic.values())])
 attack_array = np.array([list(attack_traffic.values())])
 
-# Make predictions
 print("\nAnalyzing Normal Traffic Sample:")
 normal_prob = model.predict(normal_array)[0][0]
 print(f"Probability of malicious traffic: {normal_prob:.2%}")
@@ -117,55 +112,62 @@ attack_prob = model.predict(attack_array)[0][0]
 print(f"Probability of malicious traffic: {attack_prob:.2%}")
 print(f"Classification: {'Malicious' if attack_prob > 0.5 else 'Benign'}")
 
-# Print suspicious indicators for attack traffic
-print("\nSuspicious Indicators in Attack Traffic:")
-if attack_traffic["SYN Flag Count"] > 100:
-    print(f"- High SYN Count: {attack_traffic['SYN Flag Count']} (Possible SYN Flood)")
-if attack_traffic["RST Flag Count"] > 100:
-    print(f"- High RST Count: {attack_traffic['RST Flag Count']} (Possible RST Flood)")
-if attack_traffic["Flow Bytes/s"] > 10000:
-    print(f"- High Flow Rate: {attack_traffic['Flow Bytes/s']:.2f} bytes/s")
-if attack_traffic["Flow IAT Min"] < 0.0001:
-    print(f"- Very small Inter-Arrival Time: {attack_traffic['Flow IAT Min']}")
+print("\nDetailed Analysis:")
+explainer = NetworkExplainer()
 
-# Load test data and labels
+if attack_prob > 0.5:
+    explanation = explainer.explain_prediction(
+        list(attack_traffic.values()),
+        attack_prob,
+        list(attack_traffic.keys())
+    )
+    print("\nAnalysis:", explanation)
+
+    while True:
+        question = input("\nAsk a question about this malicious traffic (or 'quit' to exit): ")
+        if question.lower() in ['quit', 'exit', 'q']:
+            break
+        answer = explainer.ask_followup(
+            list(attack_traffic.values()),
+            attack_prob,
+            list(attack_traffic.keys()),
+            question
+        )
+        print("\nAnswer:", answer)
+
 data_path = os.path.join(project_root, 'data', 'network')
 X_test = pd.read_csv(os.path.join(data_path, 'test_data.csv'))
 y_test = pd.read_csv(os.path.join(data_path, 'test_labels.csv'))
 
-# Convert to numpy arrays if necessary
 X_test = X_test.to_numpy()
 y_test = y_test.to_numpy()
 
-# Evaluate the model
 test_loss, test_accuracy, test_auc = model.evaluate(X_test, y_test, verbose=1)
 
 print(f"Test Loss: {test_loss}")
 print(f"Test Accuracy: {test_accuracy}")
 print(f"Test AUC: {test_auc}")
 
-# Get predictions
+
 predictions = (model.predict(X_test) > 0.5).astype(int)
 
-# Print confusion matrix
 print("\nConfusion Matrix:")
 print(confusion_matrix(y_test, predictions))
 
-# Print classification report
 print("\nClassification Report:")
 print(classification_report(y_test, predictions))
 
-# Load the training history
+'''
 with open('final_history.json', 'r') as f:
     history = json.load(f)
 
-# Plot accuracy
 plt.plot(history['accuracy'], label='train_accuracy')
 plt.plot(history['val_accuracy'], label='val_accuracy')
 plt.xlabel('Epoch')
 plt.ylabel('Accuracy')
 plt.legend()
 plt.show()
+
 
 # Plot loss
 plt.plot(history['loss'], label='train_loss')
@@ -174,3 +176,4 @@ plt.xlabel('Epoch')
 plt.ylabel('Loss')
 plt.legend()
 plt.show() 
+'''

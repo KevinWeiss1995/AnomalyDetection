@@ -1,40 +1,39 @@
 from tensorflow import keras
-from tensorflow.keras import layers, Input
+from tensorflow.keras.layers import Dropout
+from tensorflow.keras.regularizers import l2
+
+'''
+A simple model with two hidden layers and a sigmoid output layer. 
+The model uses dropout and L2 regularization to prevent overfitting.
+Binary classification problem.
+'''
 
 def create_model(input_shape):
-    """
-    Neural net for binary traffic classification with residual connections.
-    Uses dropout and batch norm to prevent overfitting.
+    model = keras.Sequential([
+        keras.layers.Dense(128, activation='relu', input_shape=(input_shape,), kernel_regularizer=l2(0.001)),
+        Dropout(0.5),
+        keras.layers.Dense(64, activation='relu', kernel_regularizer=l2(0.001)),
+        Dropout(0.5),
+        keras.layers.Dense(1, activation='sigmoid')
+    ])
     
-    Args:
-        input_shape: Number of input features
+    # Add prediction with explanation method
+    def predict_with_explanation(self, X, feature_names=None):
+        from explanations.llm_explainer import NetworkExplainer
+        
+        predictions = self.predict(X)
+        explainer = NetworkExplainer()
+        
+        results = []
+        for i, (features, pred) in enumerate(zip(X, predictions)):
+            explanation = explainer.explain_prediction(features, pred, feature_names)
+            results.append({
+                'prediction': bool(pred > 0.5),
+                'confidence': float(pred),
+                'explanation': explanation
+            })
+        return results
     
-    Returns:
-        A compiled Keras model
-    """
-    inputs = Input(shape=(input_shape,), name='input')
-    
-    x = layers.Dropout(0.5)(inputs)
-    
-    x = layers.Dense(64, activation='relu',
-                    kernel_regularizer=keras.regularizers.l2(0.005),
-                    kernel_initializer='he_uniform')(x)
-    x = layers.Dropout(0.4)(x)
-    x = layers.BatchNormalization()(x)
-    
-    skip = x
-    x = layers.Dense(32, activation='relu',
-                    kernel_regularizer=keras.regularizers.l2(0.01))(x)
-    x = layers.Dropout(0.3)(x)
-    x = layers.BatchNormalization()(x)
-    x = layers.Dense(64, activation='relu')(x)
-    x = layers.Add()([x, skip])
-    
-    x = layers.Dense(16, activation='relu',
-                    kernel_regularizer=keras.regularizers.l2(0.01))(x)
-    x = layers.Dropout(0.2)(x)
-    
-    outputs = layers.Dense(1, activation='sigmoid', name='output')(x)
-    
-    model = keras.Model(inputs=inputs, outputs=outputs)
-    return model 
+    # Add the method to the model
+    model.predict_with_explanation = predict_with_explanation.__get__(model)
+    return model

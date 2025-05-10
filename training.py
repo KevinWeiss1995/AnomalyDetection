@@ -3,6 +3,7 @@ from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import classification_report, confusion_matrix
 from tensorflow import keras
 import tensorflow as tf
+import json
 
 from model import create_model
 from optimizers.kfac import KFACCallback
@@ -54,7 +55,7 @@ def train_with_cross_validation(X, y, n_splits=5):
                 restore_best_weights=True
             ),
             KFACCallback(damping=0.001, momentum=0.9),
-            CyclicLR(base_lr=0.0001, max_lr=0.001, step_size=2000)
+            CyclicLR(base_lr=0.00005, max_lr=0.0005, step_size=2000)
         ]
         
         history = model.fit(
@@ -109,6 +110,10 @@ def train_final_model(X, y, X_test, y_test):
         ],
         verbose=1
     )
+
+
+    with open('final_history.json', 'w') as f:
+        json.dump(final_history.history, f)
 
     predictions = (final_model.predict(X_test) > 0.5).astype(int)
     print("\nFinal Model Results:")
